@@ -1,0 +1,5 @@
+{
+    "cmake.configureArgs": [
+        "-DRPM_PLATFORM=ARMv5T"
+    ]
+}
