@@ -2,6 +2,7 @@
 #define __RPM_MODULEMANAGER_CPP
 
 #include "Heap/exl_Allocator.h"
+#include "Util/exl_StrEq.h"
 
 #include "RPM_Types.h"
 #include "RPM_DllApi.h"
@@ -13,8 +14,9 @@
 namespace rpm {
 	namespace mgr {
 		ModuleManager::ModuleManager(exl::heap::Allocator* moduleHeap) {
-			m_LastModule = NULL;
-			m_ExternRelocator = NULL;
+			m_LastModule = nullptr;
+			m_ExternRelocator = nullptr;
+			m_ListenerHead = nullptr;
 			m_ModuleHeap = moduleHeap;
 		}
 
@@ -38,7 +40,21 @@ namespace rpm {
 			m_ExternRelocator = relocator;
 		}
 
+		void ModuleManager::BindModuleListener(ModuleListener* listener) {
+			listener->m_Next = m_ListenerHead;
+			m_ListenerHead = listener;
+		}
+
+		void ModuleManager::CallModuleListeners(rpm::Module* module, ModuleEvent event) {
+			ModuleListener* l = m_ListenerHead;
+			while (l) {
+				l->OnEvent(this, module, event);
+				l = l->m_Next;
+			}
+		}
+
 		rpm::Module* ModuleManager::LoadModule(rpm::init::ModuleAllocation data) {
+			RPM_ASSERT(data);
 			rpm::Module* module = rpm::Module::InitModule(data);
 
 			if (m_LastModule) {
@@ -53,11 +69,13 @@ namespace rpm {
 			if (!module->Verify()) {
 				RPM_DEBUG_PRINTF("Module verification failed!!");
 			}
+			CallModuleListeners(module, LOADED);
 
 			return module;
 		}
 
 		void ModuleManager::UnloadModule(rpm::Module* module) {
+			RPM_ASSERT(module);
 			ControlModule(module, rpm::DllMainReason::MODULE_UNLOAD);
 			if (module->GetPrevModule()) {
 				module->GetPrevModule()->SetNextModule(module->GetNextModule());
@@ -70,11 +88,12 @@ namespace rpm {
 				//If module->PrevModule is NULL, this is the last module being unloaded
 				m_LastModule = module->GetPrevModule();
 			}
+			CallModuleListeners(module, UNLOADED);
 			FreeModule(module);
 		}
 
 		void ModuleManager::StartModule(rpm::Module* module, rpm::FixLevel fixLevel) {
-			rpm::Util::ForbidUnused(0x42694269);
+			RPM_ASSERT(module);
 			RPM_DEBUG_PRINTF("Starting module...\n");
 			RPM_DEBUG_PRINTF("Linking...\n");
 			LinkModule(module);
@@ -82,20 +101,26 @@ namespace rpm {
 			module->RelocateInternal();
 			RPM_DEBUG_PRINTF("Fixing %d.\n", fixLevel);
 			FixModule(module, fixLevel);
+			CallModuleListeners(module, READY);
 			//TODO static initializers
 			ControlModule(module, rpm::DllMainReason::MODULE_LOAD); //todo: failure ?
+			CallModuleListeners(module, STARTED);
 		}
 
 		void ModuleManager::FixModule(rpm::Module* module, rpm::FixLevel fixLevel) {
 			size_t fixedSize = module->CalcFixedSize(fixLevel);
 			if (fixedSize != -1) {
-				m_ModuleHeap->Realloc(module, fixedSize);
+				module = static_cast<rpm::Module*>(m_ModuleHeap->Realloc(module, fixedSize)); 
+				//The realloc should NEVER return a different pointer as the size is shrinking, but just for sanity...
+				RPM_ASSERT(module);
 
 				switch (fixLevel) {
 					case rpm::FixLevel::INTERNAL_RELOCATIONS:
 					{
 						rpm::Module::RelocationSection* rels = module->GetRelocations();
-						rels->InternalRelocations = nullptr;
+						if (rels) {
+							rels->InternalRelocations = nullptr;
+						}
 						break;
 					}
 					case rpm::FixLevel::ALL_NONCODE:
@@ -104,6 +129,7 @@ namespace rpm {
 				}
 
 				module->UpdateModuleSizeAfterFixing(fixedSize);
+				CallModuleListeners(module, FIXED);
 			}
 		}
 
@@ -132,6 +158,7 @@ namespace rpm {
 				}
 				other = other->GetPrevModule();
 			}
+			CallModuleListeners(module, FIXED);
 		}
 
 		void ModuleManager::LinkModuleExtern(rpm::Module* module, const char* externModule) {
@@ -140,38 +167,40 @@ namespace rpm {
 				if (rel) {
 					rpm::RelocationList* externals = rel->ExternalRelocations;
 					
-					if (externModule) {
-						if (rel->ExternModules) {
-							u32 extModIndex = -1;
+					if (externals) {
+						if (externModule) {
+							if (rel->ExternModules) {
+								u32 extModIndex = -1;
 
-							{
-								rpm::ModuleNameList* list = rel->ExternModules;
-								u32 extModCount = list->Count;
-								for (u32 i = 0; i < extModCount; i++) {
-									RPM_NAMEOFS nameofs = list->Entries[i];
-									if (!strcmp(externModule, module->GetString(nameofs))) {
-										extModIndex = i;
-										break;
+								{
+									rpm::ModuleNameList* list = rel->ExternModules;
+									u32 extModCount = list->Count;
+									for (u32 i = 0; i < extModCount; i++) {
+										RPM_NAMEOFS nameofs = list->Entries[i];
+										if (strequal(externModule, module->GetString(nameofs))) {
+											extModIndex = i;
+											break;
+										}
 									}
 								}
-							}
 
-							if (extModIndex != -1) {
-								for (int i = 0; i < externals->Count; i++) {
-									Relocation* r = &externals->Relocations[i];
+								if (extModIndex != -1) {
+									for (int i = 0; i < externals->Count; i++) {
+										Relocation* r = &externals->Relocations[i];
 
-									if (r->Target.ExternModuleIndex == extModIndex) {
-										m_ExternRelocator->ProcessRelocation(module, r);
+										if (r->Target.ExternModuleIndex == extModIndex) {
+											m_ExternRelocator->ProcessRelocation(module, r);
+										}
 									}
 								}
 							}
 						}
-					}
-					else {
-						for (int i = 0; i < externals->Count; i++) {
-							Relocation* r = &externals->Relocations[i];
+						else {
+							for (int i = 0; i < externals->Count; i++) {
+								Relocation* r = &externals->Relocations[i];
 
-							m_ExternRelocator->ProcessRelocation(module, r);
+								m_ExternRelocator->ProcessRelocation(module, r);
+							}
 						}
 					}
 				}

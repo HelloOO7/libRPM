@@ -3,15 +3,19 @@
 
 #include "RPM_Module.h"
 #include "RPM_MetaData.h"
+#include "Util/exl_StrEq.h"
 
 namespace rpm {
     MetaValue* MetaData::FindValue(Module* module, const char* name) {
+        RPM_ASSERT(module);
         MetaValue* val = Values;
-        for (u32 i = 0; i < ValueCount; i++, val++) {
-            const char* valueStr = module->GetString(val->Name);
-            if (valueStr) {
-                if (strcmp(valueStr, name) == 0) {
-                    return val;
+        if (val) {
+            for (u32 i = 0; i < ValueCount; i++, val++) {
+                const char* valueStr = module->GetString(val->Name);
+                if (valueStr) {
+                    if (strequal(valueStr, name)) {
+                        return val;
+                    }
                 }
             }
         }
@@ -28,7 +32,7 @@ namespace rpm {
 
     const char* MetaData::GetString(Module* module, const char* name, const char* defaultValue) {
         MetaValue* val = FindValue(module, name);
-        if (val && val->Type == MetaValueType::INT) {
+        if (val && val->Type == MetaValueType::STRING) {
             return module->GetString(val->StringValue);
         }
         return defaultValue;

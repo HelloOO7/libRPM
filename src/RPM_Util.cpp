@@ -52,16 +52,11 @@ namespace rpm {
 		destAddr = GetSymbolAddressAbsolute(m, sym);
 
 		if (destAddr) {
-			RELOC_DEBUG_PRINTF("Begin relocation\n");
 			cpu::CpuRelRequest req;
 			req.Source = srcAddr;
 			req.Symbol = sym;
 			req.Target = destAddr;
 			req.Type = r->Target.RelProcType;
-
-			if (sym) {
-				RELOC_DEBUG_PRINTF("Processing relocation to symbol %s\n", m->GetString(sym->Name));
-			}
 
 			cpu::CpuUtil::ProcessRelRequest(&req);
 		}

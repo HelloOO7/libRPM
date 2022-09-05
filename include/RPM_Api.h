@@ -23,5 +23,7 @@
 #include "RPM_ModuleFixLevel.h"
 #include "RPM_Module.h"
 #include "RPM_ModuleManager.h"
+#include "RPM_ExternalRelocator.h"
+#include "RPM_ModuleListener.h"
 
 #endif

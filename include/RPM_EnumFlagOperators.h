@@ -10,6 +10,11 @@
 #ifndef __RPM_ENUMFLAGOPERATORS_H
 #define __RPM_ENUMFLAGOPERATORS_H
 
+#ifndef CPP_ENUM_OPS_DEFINED
+#define CPP_ENUM_OPS_DEFINED
+
+#include "RPM_Types.h"
+
 template <size_t S>
 struct _ENUM_FLAG_INTEGER_FOR_SIZE;
 
@@ -45,5 +50,7 @@ inline ENUMTYPE &operator &= (ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((_
 inline ENUMTYPE operator ~ (ENUMTYPE a) { return ENUMTYPE(~((_ENUM_FLAG_SIZED_INTEGER<ENUMTYPE>::type)a)); } \
 inline ENUMTYPE operator ^ (ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((_ENUM_FLAG_SIZED_INTEGER<ENUMTYPE>::type)a) ^ ((_ENUM_FLAG_SIZED_INTEGER<ENUMTYPE>::type)b)); } \
 inline ENUMTYPE &operator ^= (ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((_ENUM_FLAG_SIZED_INTEGER<ENUMTYPE>::type &)a) ^= ((_ENUM_FLAG_SIZED_INTEGER<ENUMTYPE>::type)b)); } \
+
+#endif
 
 #endif

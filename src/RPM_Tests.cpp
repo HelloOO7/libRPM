@@ -3,7 +3,7 @@
 
 #include "RPM_Types.h"
 #include "RPM_Module.h"
-#include "Heap/exl_MemoryManager.h"
+#include "Heap/exl_HeapArea.h"
 
 //#define TEST_DUMP_SYMBOLS
 
@@ -35,7 +35,7 @@ void Dump(void* fileBuf, rpm::Module* mod) {
 	fclose(relDump);
 }
 
-void DumpMem(exl::heap::MemoryManager* mgr, const char* path) {
+void DumpMem(exl::heap::HeapArea* mgr, const char* path) {
 	#ifdef DEBUG
 	FILE* dump = fopen(path, "wb+");
 
@@ -45,7 +45,7 @@ void DumpMem(exl::heap::MemoryManager* mgr, const char* path) {
 	#endif
 }
 
-void* ReadFile(const char* path, exl::heap::MemoryManager* memMgr) {
+void* ReadFile(const char* path, exl::heap::HeapArea* memMgr) {
 	FILE* file = fopen(path, "rb");
 
 	fseek(file, 0, SEEK_END);
@@ -68,7 +68,7 @@ void* ReadFile(const char* path, exl::heap::MemoryManager* memMgr) {
 int main(void) {
 	void* memMgrHeap = malloc(MEMORY_MGR_HEAPSIZE);
 
-	exl::heap::MemoryManager* memMgr = new(malloc(sizeof(exl::heap::MemoryManager))) exl::heap::MemoryManager("RPMTests", memMgrHeap, MEMORY_MGR_HEAPSIZE);
+	exl::heap::HeapArea* memMgr = new(malloc(sizeof(exl::heap::HeapArea))) exl::heap::HeapArea("RPMTests", memMgrHeap, MEMORY_MGR_HEAPSIZE);
 	rpm::mgr::ModuleManager* modMgr = new(memMgr) rpm::mgr::ModuleManager(memMgr);
 
 	void* ondemandLoaderModule = ReadFile("OnDemandLibraryManager.rpm", memMgr);

@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+message("Begin LibRPM build")
 message("Target platform: " ${RPM_PLATFORM})
 
 IF (RPM_PLATFORM STREQUAL "ARMv5T")
@@ -39,11 +40,15 @@ add_library(LibRPM OBJECT ${DLL_SOURCES})
 set_target_properties(LibRPM PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(LibRPM PUBLIC include)
 
+add_library(LibRPM.Include OBJECT include/RPM_Api.h)
+target_include_directories(LibRPM.Include PUBLIC include)
+
 IF (WIN32)
 file(GLOB TESTS_SOURCES
     RPM_Tests.cpp
     ../extlib/ABI/*
-    ../extlib/Heap/exl_MemoryManager.*
+    ../extlib/Util/exl_Print.*
+    ../extlib/Heap/exl_HeapArea.*
 )
 
 add_executable(RPMTests ${TESTS_SOURCES})

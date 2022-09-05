@@ -9,10 +9,12 @@
 #include "RPM_DllApi.h"
 #include "RPM_ModuleFixLevel.h"
 #include "RPM_ModuleInit.h"
+#include "Util/exl_StrEq.h"
 #include <cstring>
 
 namespace rpm {
 	Module* Module::InitModule(rpm::init::ModuleAllocation alloc) {
+		RPM_ASSERT(alloc);
 		Module* module = reinterpret_cast<Module*>(alloc);
 		module->RelocateControl();
 		return module;
@@ -52,6 +54,7 @@ namespace rpm {
 	}
 
 	void Module::LinkWithModule(Module* other) {
+		RPM_ASSERT(other);
 		this->ImportModule(other);
 		other->ImportModule(this);
 	}
@@ -111,7 +114,7 @@ namespace rpm {
 				const char* other = GetString(pSym->Name);
 				if (other) {
 					if (name) {
-						if (strcmp(other, name) == 0) {
+						if (strequal(other, name)) {
 							return i;
 						}
 					}
@@ -257,20 +260,21 @@ namespace rpm {
 
 	void Module::RelocateInternal() {
 		if (!GetReserveFlag(RPM_RSVFLAG_CODE_RELOCATED_INTERNAL)) {
-				RelocationSection* rel = GetRelocations();
-				if (rel) {
-
+			RelocationSection* rel = GetRelocations();
+			if (rel) {
 				RelocationList* internals = rel->InternalRelocations;
 
-				for (int i = 0; i < internals->Count; i++) {
-					Relocation* r = &internals->Relocations[i];
+				if (internals) {
+					for (int i = 0; i < internals->Count; i++) {
+						Relocation* r = &internals->Relocations[i];
 
-					u32 addr = r->Target.Offset;
-					Util::CutAlign16(&addr);
+						u32 addr = r->Target.Offset;
+						Util::CutAlign16(&addr);
 
-					u8* code = GetCode() + addr;
+						u8* code = GetCode() + addr;
 
-					Util::DoRelocation(code, this, r);
+						Util::DoRelocation(code, this, r);
+					}
 				}
 
 				SetReserveFlag(RPM_RSVFLAG_CODE_RELOCATED_INTERNAL);
@@ -283,16 +287,18 @@ namespace rpm {
 		if (rel) {
 			RelocationList* importRels = rel->InternalImportRelocations;
 
-			for (int i = 0; i < importRels->Count; i++) {
-				Relocation* r = &importRels->Relocations[i];
+			if (importRels) {
+				for (int i = 0; i < importRels->Count; i++) {
+					Relocation* r = &importRels->Relocations[i];
 
-				if (r->Source.SymbNo == symIndex) {
-					u32 addr = r->Target.Offset;
-					Util::CutAlign16(&addr);
+					if (r->Source.SymbNo == symIndex) {
+						u32 addr = r->Target.Offset;
+						Util::CutAlign16(&addr);
 
-					u8* code = GetCode() + addr;
+						u8* code = GetCode() + addr;
 
-					Util::DoRelocation(code, this, r);
+						Util::DoRelocation(code, this, r);
+					}
 				}
 			}
 		}

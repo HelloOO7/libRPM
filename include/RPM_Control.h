@@ -115,7 +115,7 @@ namespace rpm {
 		 * 
 		 * PUSH R4 		@Backup a low register so that we can LDR into it
 		 * LDR R4, =OFFSET
-		 * MOV R12, 4 	@Move the LDRd value to the ARM switch register
+		 * MOV R12, R4 	@Move the LDRd value to the ARM switch register
 		 * POP R4	 	@Restore the low register value
 		 * BX R12		@Branch to the high register
 		 * .word OFFSET T
@@ -124,7 +124,7 @@ namespace rpm {
 		 * 
 		 * MOV R11, R4 	@Backup a low register so that we can LDR into it
 		 * LDR R4, =OFFSET
-		 * MOV R12, 4 	@Move the LDRd value to the high register
+		 * MOV R12, R4 	@Move the LDRd value to the high register
 		 * MOV R4, R11 	@Restore the low register value
 		 * BX R12		@Branch to the high register
 		 * .word OFFSET T

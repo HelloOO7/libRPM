@@ -15,9 +15,13 @@
 #define MAGIC(a,b,c,d) static_cast<u32>((static_cast<u8>(a) <<  0) | (static_cast<u8>(b) << 8) | (static_cast<u8>(c) << 16) | (static_cast<u8>(d) << 24))
 
 #ifdef DEBUG
-#define RPM_DEBUG_PRINTF(...) printf(__VA_ARGS__)
+#include "exl_DebugPrint.h"
+#include "exl_Assert.h"
+#define RPM_DEBUG_PRINTF exlPrintf
+#define RPM_ASSERT(expr) EXL_ASSERT(expr)
 #else
 #define RPM_DEBUG_PRINTF(...)
+#define RPM_ASSERT(expr)
 #endif
 
 #include "RPM_Control.h"
