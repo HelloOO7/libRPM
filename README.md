@@ -19,10 +19,11 @@ LibRPM can be built using the CMake build system. A target platform has to be de
 Currently, only the `ARMv5T` and `Win32` targets are defined. LibRPM is guaranteed to build on `arm-none-eabi-gcc` and `mingw32-gcc`.
 The build output can then be used as a static library on the target system.
 
-LibRPM also depends on certain [ExtLib](https://github.com/HelloOO7/ExtLib) sources, wherefore it expects it to be cloned into the parent directory as follows:
-` - <root>`
-` └─ libRPM`
-` └─ ExtLib`
+LibRPM also depends on certain [ExtLib](https://github.com/HelloOO7/ExtLib) sources, wherefore it expects it to be cloned into the parent directory as follows:  
+  
+` - <root>`  
+` └─ libRPM`  
+` └─ ExtLib`  
 
 # Linking RPM executables
 The stock linker suite for the RPM format is available at https://github.com/HelloOO7/RPMAuthoringTools.
