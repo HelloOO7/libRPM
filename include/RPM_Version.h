@@ -13,7 +13,7 @@
 /**
  * @brief Current version of the Relocatable Program Module library and supported binary formats.
  */
-#define LIBRPM_VERSION 10 //libRPM v0.10
+#define LIBRPM_VERSION 11 //libRPM v0.11
 
 /**
  *  === RELOCATABLE PROGRAM MODULE LIBRARY - VERSION HISTORY ===
@@ -33,6 +33,7 @@
  *  - v0.8  : Import and export symbol hashing for blazing fast lookup.
  *  - v0.9  : Separate relocation list for imported symbols (allows loading libraries from within module).
  *  - v0.10 : Remove external relocation sources (never used), shrink rpm::Relocation size to 12 bytes.
+ *  - v0.11 : Add BSS support / module expansion, header fields now relative to start of DLXH.
  */
 
 #endif

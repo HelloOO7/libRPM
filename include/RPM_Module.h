@@ -94,8 +94,11 @@ namespace rpm {
 			u32 		 Magic;
 			u32 		 Version;
 			InfoSection* Info;
-			u32			 Reserved1;
+			u32			 BSSSize;
+			u32			 HeaderSectionSize;
 		};
+
+		friend class rpm::mgr::ModuleManager;
 
 		/**
 		 * @brief Creates a module from an intermediate allocation.
@@ -103,6 +106,14 @@ namespace rpm {
 		 * @param alloc The allocated and loaded module data.		 
 		 */
 		RPM_PUBLIC static Module* InitModule(rpm::init::ModuleAllocation alloc);
+
+		/**
+		 * @brief Checks this module's version and magic constants against current libRPM implementation.
+		 * 
+		 * @return true If all constants have been matched.
+		 * @return false If at least one of the constants has an irregular value.
+		 */
+		bool Verify();
 
 		/**
 		 * @brief Calculates the byte-size of a module after fixing.
@@ -136,7 +147,9 @@ namespace rpm {
 		 * @param newSize The size of the module in bytes.
 		 */
 		INLINE void UpdateModuleSizeAfterFixing(size_t newSize) {
+			u32 sizeDiff = m_Size - newSize;
 			m_Size = newSize;
+			m_Exec->HeaderSectionSize -= sizeDiff;
 		}
 
 		/**
@@ -325,6 +338,9 @@ namespace rpm {
 		 * @return u16 Index of the external module within the data table.
 		 */
 		RPM_PUBLIC const char* GetRelExternModuleName(u16 index);
+	
+	private:
+		void Expand();
 
 		/**
 		 * @brief Relocates all control sections of this module.
@@ -346,26 +362,18 @@ namespace rpm {
 		void RelocateInternal();
 
 		/**
-		 * @brief Relocates this module's file offset to a memory pointer.
+		 * @brief Relocates this module's DLHX-relative offset to a memory pointer.
 		 * 
 		 * @param pptr Pointer to the location of the memory pointer.
 		 */
-		void RelocFilePtr(void* pptr);
+		void RelocHeaderPtr(void* pptr);
 
 		/**
-		 * @brief Relocates this module's file offset to a memory pointer, handling -1 and 0 as invalid null pointers.
+		 * @brief Relocates this module's DLXH-relative offset to a memory pointer, handling -1 and 0 as invalid null pointers.
 		 * 
 		 * @param pptr Pointer to the location of the memory pointer.
 		 */
-		void RelocFilePtrNonNull(void* pptr);
-
-		/**
-		 * @brief Checks this module's version and magic constants against current libRPM implementation.
-		 * 
-		 * @return true If all constants have been matched.
-		 * @return false If at least one of the constants has an irregular value.
-		 */
-		bool Verify();
+		void RelocHeaderPtrNonNull(void* pptr);
 
 	private:
 		#define RPM_MAGIC MAGIC('R', 'P', 'M', '0')

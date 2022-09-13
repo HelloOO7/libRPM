@@ -55,6 +55,8 @@ namespace rpm {
 
 		rpm::Module* ModuleManager::LoadModule(rpm::init::ModuleAllocation data) {
 			RPM_ASSERT(data);
+			//Reallocate for BSS expansion. If the parent framework is smart, the allocation is already big enough and nothing is changed.
+			data = exl::heap::Allocator::ReallocStatic(data, reinterpret_cast<rpm::Module*>(data)->GetModuleSize());
 			rpm::Module* module = rpm::Module::InitModule(data);
 
 			if (m_LastModule) {

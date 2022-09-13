@@ -49,6 +49,8 @@ file(GLOB TESTS_SOURCES
     ../extlib/ABI/*
     ../extlib/Util/exl_Print.*
     ../extlib/Heap/exl_HeapArea.*
+    ../extlib/Heap/exl_MemOperators.*
+    ../extlib/Heap/exl_Allocator.*
 )
 
 add_executable(RPMTests ${TESTS_SOURCES})

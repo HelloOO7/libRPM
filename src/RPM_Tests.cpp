@@ -28,7 +28,7 @@ void Dump(void* fileBuf, rpm::Module* mod) {
 		printf("Module %d: %s\n", i, mod->GetRelExternModuleName(i));
 	}
 
-	FILE* relDump = fopen("follow5_rel.rpm", "wb+");
+	FILE* relDump = fopen("TestResult.rpm", "wb+");
 
 	fwrite(fileBuf, 1, mod->GetModuleSize(), relDump);
 
@@ -71,9 +71,9 @@ int main(void) {
 	exl::heap::HeapArea* memMgr = new(malloc(sizeof(exl::heap::HeapArea))) exl::heap::HeapArea("RPMTests", memMgrHeap, MEMORY_MGR_HEAPSIZE);
 	rpm::mgr::ModuleManager* modMgr = new(memMgr) rpm::mgr::ModuleManager(memMgr);
 
-	void* ondemandLoaderModule = ReadFile("OnDemandLibraryManager.rpm", memMgr);
+	void* testModule = ReadFile("D:/_REWorkspace/pokescript_genv/codeinjection_new/MorbiusSweep/build/MorbiusSweep11.rpm", memMgr);
 
-	rpm::Module* mod = modMgr->LoadModule(ondemandLoaderModule);
+	rpm::Module* mod = modMgr->LoadModule(testModule);
 
 	if (!mod->Verify()) {
 		printf("RO verification failed.\n");
@@ -81,19 +81,9 @@ int main(void) {
 	else {
 		printf("RO verification success.\n");
 
-		Dump(ondemandLoaderModule, mod);
+		Dump(testModule, mod);
 	}
 	modMgr->StartModule(mod, rpm::FixLevel::INTERNAL_RELOCATIONS);
-
-	void* dummyDllModule = ReadFile("libDummyDll.rpm", memMgr);
-
-	rpm::Module* ddllMod = modMgr->LoadModule(dummyDllModule);
-	modMgr->StartModule(ddllMod, rpm::FixLevel::INTERNAL_RELOCATIONS);
-
-	void* odlTestModule = ReadFile("OnDemandLibraryTest.rpm", memMgr);
-
-	rpm::Module* splMod = modMgr->LoadModule(odlTestModule);
-	modMgr->StartModule(splMod, rpm::FixLevel::INTERNAL_RELOCATIONS);
 
 	printf("Dumping heap memory...\n");
 
@@ -101,9 +91,7 @@ int main(void) {
 	
 	printf("Done. Freeing.\n");
 
-	memMgr->Free(ondemandLoaderModule);
-	memMgr->Free(dummyDllModule);
-	memMgr->Free(odlTestModule);
+	memMgr->Free(testModule);
 
 	free(memMgrHeap);
 	free(memMgr);

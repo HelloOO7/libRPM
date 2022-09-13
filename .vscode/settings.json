@@ -1,5 +1,5 @@
 {
     "cmake.configureArgs": [
-        "-DRPM_PLATFORM=ARMv5T"
+        "-DRPM_PLATFORM=Win32"
     ]
 }

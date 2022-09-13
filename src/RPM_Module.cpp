@@ -16,6 +16,7 @@ namespace rpm {
 	Module* Module::InitModule(rpm::init::ModuleAllocation alloc) {
 		RPM_ASSERT(alloc);
 		Module* module = reinterpret_cast<Module*>(alloc);
+		module->Expand();
 		module->RelocateControl();
 		return module;
 	}
@@ -218,16 +219,16 @@ namespace rpm {
 		return NULL;
 	}
 
-	void Module::RelocFilePtr(void* pptr) {
-		Util::RelocPtr(pptr, static_cast<void*>(this));
+	void Module::RelocHeaderPtr(void* pptr) {
+		Util::RelocPtr(pptr, static_cast<void*>(m_Exec));
 	}
 
-	void Module::RelocFilePtrNonNull(void* pptr) {
+	void Module::RelocHeaderPtrNonNull(void* pptr) {
 		void** test = static_cast<void**>(pptr);
 		void* ptr = *test;
 		if (ptr != reinterpret_cast<void*>(0xFFFFFFFF)) {
 			if (ptr != NULL) {
-				RelocFilePtr(pptr);
+				RelocHeaderPtr(pptr);
 			}
 		}
 		else {
@@ -235,24 +236,35 @@ namespace rpm {
 		}
 	}
 
+	void Module::Expand() {
+		Util::RelocPtr(&m_Exec, this);
+		u32 bssSize = m_Exec->BSSSize;
+		if (bssSize > 0) {
+			DllExec* newHeaderPos = reinterpret_cast<DllExec*>(reinterpret_cast<char*>(m_Exec) + bssSize);
+			void* bssStart = m_Exec;
+			memmove(newHeaderPos, m_Exec, m_Exec->HeaderSectionSize);
+			memset(bssStart, 0, bssSize); //Fill BSS
+			m_Exec = newHeaderPos;
+		}
+	}
+
 	void Module::RelocateControl() {
 		if (!GetReserveFlag(RPM_RSVFLAG_CONTROL_RELOCATED)) {
-			RelocFilePtr(&m_Exec);
-			RelocFilePtrNonNull(&m_Exec->Info);
-			RelocFilePtrNonNull(&m_Exec->Info->Code);
-			RelocFilePtrNonNull(&m_Exec->Info->Symbols);
-			RelocFilePtrNonNull(&m_Exec->Info->Strings);
-			RelocFilePtrNonNull(&m_Exec->Info->Relocations);
-			RelocFilePtrNonNull(&m_Exec->Info->MetaValueSection);
+			RelocHeaderPtrNonNull(&m_Exec->Info);
+			Util::RelocPtr(&m_Exec->Info->Code, this); //Relative to file, not header
+			RelocHeaderPtrNonNull(&m_Exec->Info->Symbols);
+			RelocHeaderPtrNonNull(&m_Exec->Info->Strings);
+			RelocHeaderPtrNonNull(&m_Exec->Info->Relocations);
+			RelocHeaderPtrNonNull(&m_Exec->Info->MetaValueSection);
 			if (m_Exec->Info->Symbols) {
-				RelocFilePtrNonNull(&m_Exec->Info->Symbols->ExternModules);
-				RelocFilePtrNonNull(&m_Exec->Info->Symbols->ExportSymbolHashTable);
+				RelocHeaderPtrNonNull(&m_Exec->Info->Symbols->ExternModules);
+				RelocHeaderPtrNonNull(&m_Exec->Info->Symbols->ExportSymbolHashTable);
 			}
 			if (m_Exec->Info->Relocations) {
-				RelocFilePtrNonNull(&m_Exec->Info->Relocations->InternalRelocations);
-				RelocFilePtrNonNull(&m_Exec->Info->Relocations->InternalImportRelocations);
-				RelocFilePtrNonNull(&m_Exec->Info->Relocations->ExternalRelocations);
-				RelocFilePtrNonNull(&m_Exec->Info->Relocations->ExternModules);
+				RelocHeaderPtrNonNull(&m_Exec->Info->Relocations->InternalRelocations);
+				RelocHeaderPtrNonNull(&m_Exec->Info->Relocations->InternalImportRelocations);
+				RelocHeaderPtrNonNull(&m_Exec->Info->Relocations->ExternalRelocations);
+				RelocHeaderPtrNonNull(&m_Exec->Info->Relocations->ExternModules);
 			}
 			SetReserveFlag(RPM_RSVFLAG_CONTROL_RELOCATED);
 		}
