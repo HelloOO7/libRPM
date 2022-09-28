@@ -27,9 +27,12 @@ project(LibRPM VERSION 0.9.0)
 include(CTest)
 enable_testing()
 
-add_compile_options(-fno-rtti -fno-exceptions)
+add_compile_options(-fno-rtti -fno-exceptions -fvisibility=hidden)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../extlib)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+add_compile_definitions(DEBUG)
+endif()
 
 file(GLOB DLL_SOURCES
     src/*.cpp
@@ -44,6 +47,7 @@ add_library(LibRPM.Include OBJECT include/RPM_Api.h)
 target_include_directories(LibRPM.Include PUBLIC include)
 
 IF (WIN32)
+add_compile_definitions(EXL_PLATFORM_WIN32)
 file(GLOB TESTS_SOURCES
     RPM_Tests.cpp
     ../extlib/ABI/*

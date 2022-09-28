@@ -65,17 +65,18 @@ namespace rpm {
 		SymbolSection* symSect = GetSymbols();
 		SymbolSection* otherSymSect = other->GetSymbols();
 		if (symSect && otherSymSect && otherSymSect->ExportSymbolHashTable) {
+			u32 firstImportSymbolIdx = symSect->FirstImportSymbolIdx;
 			u32 importSymbolCount = symSect->ImportSymbolCount;
 			u32 otherExportSymbolCount = otherSymSect->ExportSymbolCount;
 			u8* otherCode = other->GetCode();
 
-			RPM_DEBUG_PRINTF("Linking module, import symbol ct %d other export symbol ct %d\n", importSymbolCount, otherExportSymbolCount);
+			RPM_DEBUG_PRINTF("Linking module, import symbol ct %d other export symbol ct %d first import symbol index %d\n", importSymbolCount, otherExportSymbolCount, firstImportSymbolIdx);
 			
-			if (importSymbolCount && otherExportSymbolCount && symSect->FirstExportSymbolIdx != 0xFFFF) {
-				Symbol* sym = &symSect->Symbols[symSect->FirstImportSymbolIdx];
+			if (importSymbolCount && otherExportSymbolCount && firstImportSymbolIdx != 0xFFFF) {
+				Symbol* sym = &symSect->Symbols[firstImportSymbolIdx];
 				Symbol* extSym;
-				u32 importSymbolEnd = symSect->FirstImportSymbolIdx + importSymbolCount;
-				for (u32 importSymbolIndex = symSect->FirstImportSymbolIdx; importSymbolIndex < importSymbolEnd; importSymbolIndex++, sym++) {
+				u32 importSymbolEnd = firstImportSymbolIdx + importSymbolCount;
+				for (u32 importSymbolIndex = firstImportSymbolIdx; importSymbolIndex < importSymbolEnd; importSymbolIndex++, sym++) {
 					if (sym->Attr & SymbolAttr::RPM_SYMATTR_IMPORT) {
 						RPM_NAMEHASH hash = sym->Addr.ImportHash;
 
@@ -318,9 +319,6 @@ namespace rpm {
 
 	bool Module::Verify() {
 		if (!GetReserveFlag(RPM_RSVFLAG_CONTROL_RELOCATED)) {
-			return false;
-		}
-		if (m_Magic != RPM_MAGIC) {
 			return false;
 		}
 		if (!m_Exec) {

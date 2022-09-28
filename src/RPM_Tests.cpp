@@ -71,7 +71,10 @@ int main(void) {
 	exl::heap::HeapArea* memMgr = new(malloc(sizeof(exl::heap::HeapArea))) exl::heap::HeapArea("RPMTests", memMgrHeap, MEMORY_MGR_HEAPSIZE);
 	rpm::mgr::ModuleManager* modMgr = new(memMgr) rpm::mgr::ModuleManager(memMgr);
 
-	void* testModule = ReadFile("D:/_REWorkspace/pokescript_genv/codeinjection_new/MorbiusSweep/build/MorbiusSweep11.rpm", memMgr);
+	void* testDependency = ReadFile("D:/_REWorkspace/pokescript_genv/codeinjection_new/NitroKernel/build/NitroKernel.dll", memMgr);
+	rpm::Module* depMod = modMgr->LoadModule(testDependency);
+
+	void* testModule = ReadFile("D:/_REWorkspace/pokescript_genv/codeinjection_new/CinePlayerTest/CinePlayerTest.dll", memMgr);
 
 	rpm::Module* mod = modMgr->LoadModule(testModule);
 
@@ -83,6 +86,10 @@ int main(void) {
 
 		Dump(testModule, mod);
 	}
+	printf("Starting module 1\n");
+	modMgr->StartModule(depMod, rpm::FixLevel::INTERNAL_RELOCATIONS);
+
+	printf("Starting module 2\n");
 	modMgr->StartModule(mod, rpm::FixLevel::INTERNAL_RELOCATIONS);
 
 	printf("Dumping heap memory...\n");
