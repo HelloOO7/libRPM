@@ -12,7 +12,7 @@
 #define __RPM_CONTROL_H
 
 #include "RPM_Types.h"
-#include "RPM_EnumFlagOperators.h"
+#include "exl_EnumFlagOperators.h"
 
 namespace rpm {
 	#define MODULE_BASE "base"
