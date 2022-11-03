@@ -69,7 +69,8 @@ namespace rpm {
 #include "RPM_ModuleManager.h"
 
 //Force C linkage
-#define RPM_DLLAPI_DLLMAIN_PROTOTYPE rpm::DllMainReturnCode RPM_DLLAPI_DLLMAIN(rpm::mgr::ModuleManager* mgr, rpm::Module* module, rpm::DllMainReason reason)
+#define RPM_DLLAPI_DLLMAIN_PARAMS rpm::mgr::ModuleManager* mgr, rpm::Module* module, rpm::DllMainReason reason
+#define RPM_DLLAPI_DLLMAIN_PROTOTYPE rpm::DllMainReturnCode RPM_DLLAPI_DLLMAIN(RPM_DLLAPI_DLLMAIN_PARAMS)
 #define RPM_DLLAPI_DLLMAIN_DEFINE RPM_PUBLIC_EXPORT RPM_DLLAPI_DLLMAIN_PROTOTYPE
 #define RPM_DLLAPI_DLLMAIN_DECLARE extern "C" RPM_DLLAPI_DLLMAIN_DEFINE
 

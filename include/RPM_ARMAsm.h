@@ -25,8 +25,8 @@
 #define THUMB_PUSH_R4 0xB410
 #define THUMB_POP_R4 0xBC10
 
-#define ARM_BLX(jump) (0b1111101 << 25) | ((((jump) & 2) != 0) << 24) | ((jump) >> 2)
-#define ARM_BL(jump) (0b11101011 << 24)| ((jump) >> 2)
-#define ARM_B(jump) (0b11101010 << 24)| ((jump) >> 2)
+#define ARM_BLX(jump) (0b1111101 << 25) | ((((jump) & 2) != 0) << 24) | (((jump) >> 2) & 0xFFFFFF)
+#define ARM_BL(jump) (0b11101011 << 24)| (((jump) >> 2) & 0xFFFFFF)
+#define ARM_B(jump) (0b11101010 << 24)| (((jump) >> 2) & 0xFFFFFF)
 
 #endif

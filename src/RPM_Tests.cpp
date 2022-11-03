@@ -87,10 +87,10 @@ int main(void) {
 		Dump(testModule, mod);
 	}
 	printf("Starting module 1\n");
-	modMgr->StartModule(depMod, rpm::FixLevel::INTERNAL_RELOCATIONS);
+	modMgr->StartModule(depMod, rpm::FixLevel::NONE);
 
 	printf("Starting module 2\n");
-	modMgr->StartModule(mod, rpm::FixLevel::INTERNAL_RELOCATIONS);
+	modMgr->StartModule(mod, rpm::FixLevel::NONE);
 
 	printf("Dumping heap memory...\n");
 

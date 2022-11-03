@@ -12,7 +12,7 @@ set(CMAKE_C_FLAGS "--specs=nosys.specs")
 set(CMAKE_CXX_FLAGS "--specs=nosys.specs")
 set(CMAKE_EXE_LINKER_FLAGS "-r -march=armv5t -mthumb" CACHE INTERNAL "")
 
-add_compile_options(-r -march=armv5t -mthumb)
+add_compile_options(-march=armv5t -mthumb)
 
 ELSEIF (RPM_PLATFORM STREQUAL "Win32")
 message("Building for Win32")
@@ -24,10 +24,10 @@ ENDIF ()
 
 project(LibRPM VERSION 0.9.0)
 
+add_compile_options(-fno-rtti -fno-exceptions -fvisibility=hidden)
+
 include(CTest)
 enable_testing()
-
-add_compile_options(-fno-rtti -fno-exceptions -fvisibility=hidden)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../extlib)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")

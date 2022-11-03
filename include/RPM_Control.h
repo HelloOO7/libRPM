@@ -31,7 +31,7 @@ namespace rpm {
 		 */
 		RPM_SYMTYPE_FUNCTION_ARM,
 		/**
-		 * @brief This symbol is a block if Thumb-coded instructions.
+		 * @brief This symbol is a block of Thumb-coded instructions.
 		 */
 		RPM_SYMTYPE_FUNCTION_THM,
 		/**
