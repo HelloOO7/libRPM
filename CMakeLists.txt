@@ -13,6 +13,7 @@ set(CMAKE_CXX_FLAGS "--specs=nosys.specs")
 set(CMAKE_EXE_LINKER_FLAGS "-r -march=armv5t -mthumb" CACHE INTERNAL "")
 
 add_compile_options(-march=armv5t -mthumb)
+add_compile_definitions(EXL_PLATFORM_GFL)
 
 ELSEIF (RPM_PLATFORM STREQUAL "Win32")
 message("Building for Win32")
@@ -34,9 +35,14 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_compile_definitions(DEBUG)
 endif()
 
+if (EXL_DESMUME)
+add_compile_definitions(EXL_DESMUME)
+endif()
+
 file(GLOB DLL_SOURCES
     src/*.cpp
     include/*.h
+    ../extlib/Util/exl_Print.*
 )
 
 add_library(LibRPM OBJECT ${DLL_SOURCES})
@@ -51,7 +57,6 @@ add_compile_definitions(EXL_PLATFORM_WIN32)
 file(GLOB TESTS_SOURCES
     RPM_Tests.cpp
     ../extlib/ABI/*
-    ../extlib/Util/exl_Print.*
     ../extlib/Heap/exl_HeapArea.*
     ../extlib/Heap/exl_MemOperators.*
     ../extlib/Heap/exl_Allocator.*

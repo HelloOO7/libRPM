@@ -70,6 +70,8 @@ namespace rpm {
 
 			if (!module->Verify()) {
 				RPM_DEBUG_PRINTF("Module verification failed!!");
+				m_ModuleHeap->Free(data);
+				return nullptr;
 			}
 			CallModuleListeners(module, LOADED);
 
@@ -90,6 +92,7 @@ namespace rpm {
 				//If module->PrevModule is NULL, this is the last module being unloaded
 				m_LastModule = module->GetPrevModule();
 			}
+			UnlinkModule(module);
 			CallModuleListeners(module, UNLOADED);
 			FreeModule(module);
 		}
@@ -104,9 +107,11 @@ namespace rpm {
 			RPM_DEBUG_PRINTF("Fixing %d.\n", fixLevel);
 			FixModule(module, fixLevel);
 			CallModuleListeners(module, READY);
+			CallModuleListeners(module, EXEC_UPDATED);
 			//TODO static initializers
 			ControlModule(module, rpm::DllMainReason::MODULE_LOAD); //todo: failure ?
 			CallModuleListeners(module, STARTED);
+			RPM_DEBUG_PRINTF("Module started\n");
 		}
 
 		void ModuleManager::FixModule(rpm::Module* module, rpm::FixLevel fixLevel) {
@@ -153,14 +158,29 @@ namespace rpm {
 		}
 
 		void ModuleManager::LinkModule(rpm::Module* module) {
+			module->AllowLinking();
 			rpm::Module* other = m_LastModule;
 			while (other) {
 				if (other != module) {
-					module->LinkWithModule(other);
+					if (module->LinkWithModule(other)) {
+						CallModuleListeners(other, EXEC_UPDATED);
+					}
 				}
 				other = other->GetPrevModule();
 			}
-			CallModuleListeners(module, FIXED);
+			CallModuleListeners(module, EXEC_UPDATED);
+		}
+
+		void ModuleManager::UnlinkModule(rpm::Module* module) {
+			rpm::Module* other = m_LastModule;
+			while (other) {
+				if (other != module) {
+					module->UnlinkFromModule(other);
+					CallModuleListeners(other, EXEC_UPDATED);
+				}
+				other = other->GetPrevModule();
+			}
+			CallModuleListeners(module, EXEC_UPDATED);
 		}
 
 		void ModuleManager::LinkModuleExtern(rpm::Module* module, const char* externModule) {

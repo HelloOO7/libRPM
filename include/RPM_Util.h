@@ -109,6 +109,26 @@ namespace rpm {
 		 * @return 32-bit FNV1a hash of the name.
 		 */
 		static RPM_NAMEHASH HashName(const char* name);
+
+		/**
+		 * @brief Searches for a hash in a sorted symbol hash array.
+		 * 
+		 * @param key The hash to search for.
+		 * @param array Array to search in.
+		 * @param arraySize Number of elements in 'array'.
+		 * @return Index of the key in the array or -1 if not found.
+		 */
+		static u32 BinarySearchExportTable(RPM_NAMEHASH key, const RPM_NAMEHASH* array, size_t arraySize);
+
+		/**
+		 * @brief Searches for a symbol in a sorted array.
+		 * 
+		 * @param key The hash to search for.
+		 * @param array Array to search in.
+		 * @param arraySize Number of elements in 'array'.
+		 * @return The symbol or nullptr if none found.
+		 */
+		static rpm::Symbol* BinarySearchImportTable(RPM_NAMEHASH key, rpm::Symbol* array, size_t arraySize);
 	};
 }
 

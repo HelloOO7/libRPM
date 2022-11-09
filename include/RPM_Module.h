@@ -247,19 +247,39 @@ namespace rpm {
 			info->MetaValueSection = nullptr;
 		}
 
+		void AllowLinking();
+
 		/**
 		 * @brief Resolves mutual import/export symbols between two modules.
 		 * 
 		 * @param other The friend module to import/export from/to.
+		 * @return True if the other module was changed as a result of the linking process.
 		 */
-		void LinkWithModule(Module* other);
+		bool LinkWithModule(Module* other);
+
+		/**
+		 * @brief Unlinks mutual import/export symbols of two modules.
+		 * 
+		 * @param other The friend module to unlink (from).
+		 */
+		void UnlinkFromModule(Module* other);
 
 		/**
 		 * @brief Resolves import symbols from another module.
 		 * 
 		 * @param other The module to import symbols from.
+		 * @return Number of symbols imported from the other module.
 		 */
-		void ImportModule(Module* other);
+		u32 ImportModule(Module* other);
+
+		/**
+		 * @brief Unlinks symbols imported from another module.
+		 * This is needed in order to flag the symbols as not imported when a dependency is
+		 * unloaded and loaded again multiple times.
+		 * 
+		 * @param other The module to unimport.
+		 */
+		void UnimportModule(Module* other);
 
 		/**
 		 * @brief Looks up a symbol index by name using string comparison.
@@ -349,6 +369,8 @@ namespace rpm {
 		 */
 		void RelocateControl();
 
+		void Prepare();
+
 		/**
 		 * @brief Performs all relocations that point to a given imported symbol.
 		 * 
@@ -389,6 +411,8 @@ namespace rpm {
 		enum ReserveFlag {
 			RPM_RSVFLAG_CONTROL_RELOCATED = 0x1,
 			RPM_RSVFLAG_CODE_RELOCATED_INTERNAL = 0x2,
+			RPM_RSVFLAG_MODULE_LINK_READY = 0x4,
+			RPM_RSVFLAG_ALL_IMPORTED = 0x8
 		};
 
 		bool GetReserveFlag(ReserveFlag flag) {
@@ -397,6 +421,10 @@ namespace rpm {
 
 		void SetReserveFlag(ReserveFlag flag) {
 			m_ReserveFlags |= flag;
+		}
+
+		void ClearReserveFlag(ReserveFlag flag) {
+			m_ReserveFlags &= ~flag;
 		}
 	};
 }

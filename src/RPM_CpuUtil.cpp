@@ -22,6 +22,9 @@ namespace rpm {
 			high = THUMB_BL_HI(diff);
 
 			if (!IsAddrThumb(req->Target)) {
+				if (diff < 0) {
+					diff = (diff + 3) & 0xFFFFFFFC;
+				}
 				low = THUMB_BLX_LO(diff);
 			}
 			else {

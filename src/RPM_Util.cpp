@@ -18,13 +18,13 @@ namespace rpm {
 			return destAddr;
 		}
 
-		if (sym->Addr.Internal.Local) { //module-relative
-			destAddr = m->GetCode();
-		}
-		else {
+		if (sym->Attr & SymbolAttr::RPM_SYMATTR_GLOBAL) { //module-relative
 			destAddr = 0;
 		}
-		destAddr += sym->Addr.Internal.Value;
+		else {
+			destAddr = m->GetCode();
+		}
+		destAddr += sym->Addr.RawAddress;
 
 		//RPM_DEBUG_PRINTF("symbol %s addr %x local %d", m->GetString(sym->Name), sym->Addr.Value, sym->Addr.Local);
 
@@ -77,6 +77,50 @@ namespace rpm {
 			name++;
 		}
 		return hash;
+	}
+
+	u32 Util::BinarySearchExportTable(RPM_NAMEHASH key, const RPM_NAMEHASH* array, size_t arraySize) {
+		u32 start = 0;
+		u32 end = arraySize;
+		u32 mid;
+		RPM_NAMEHASH val;
+
+		while (start < end) {
+			mid = start + ((end - start) >> 1);
+			val = array[mid];
+			if (val == key) {
+				return mid;
+			}
+			else if (val > key) {
+				end = mid;
+			}
+			else { //val < key
+				start = mid + 1;
+			}
+		}
+		return -1;
+	}
+
+	rpm::Symbol* Util::BinarySearchImportTable(RPM_NAMEHASH key, rpm::Symbol* array, size_t arraySize) {
+		u32 start = 0;
+		u32 end = arraySize;
+		u32 mid;
+		RPM_NAMEHASH val;
+
+		while (start < end) {
+			mid = start + ((end - start) >> 1);
+			val = array[mid].Addr.ImportHash;
+			if (val == key) {
+				return &array[mid];
+			}
+			else if (val > key) {
+				end = mid;
+			}
+			else { //val < key
+				start = mid + 1;
+			}
+		}
+		return nullptr;
 	}
 }
 

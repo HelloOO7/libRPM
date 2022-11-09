@@ -139,6 +139,13 @@ namespace rpm {
 			void LinkModule(rpm::Module* module);
 
 			/**
+			 * @brief Unlinks a module from all of the current module chain.
+			 * 
+			 * @param module The module to unlink.
+			 */
+			void UnlinkModule(rpm::Module* module);
+
+			/**
 			 * @brief Uses the currently bound external relocator to perform all external relocations that target a given module.
 			 * 
 			 * @param module The module hosting the relocations.

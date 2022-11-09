@@ -14,8 +14,8 @@ namespace rpm {
 			UNLOADED,
 			READY,
 			STARTED,
-			LINKED,
-			FIXED
+			FIXED,
+			EXEC_UPDATED
         };
 
 		/**

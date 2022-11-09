@@ -48,7 +48,8 @@ namespace rpm {
 		/**
 		 * @brief This symbol needs to be resolved from a dependency module.
 		 */
-		RPM_SYMATTR_IMPORT = 1 << 1
+		RPM_SYMATTR_IMPORT = 1 << 1,
+		RPM_SYMATTR_GLOBAL = 1 << 2
 	};
 
 	DEFINE_ENUM_FLAG_OPERATORS(SymbolAttr)
@@ -144,14 +145,6 @@ namespace rpm {
 	typedef u32 RPM_NAMEHASH;
 
 	/**
-	 * @brief Symbol reference that points to a memory address.
-	 */
-	struct InternalAddress {
-		u32  Value:31;
-		u32  Local:1;
-	};
-
-	/**
 	 * @brief Reference to an RPM symbol's location.
 	 */
 	struct Address {
@@ -159,7 +152,7 @@ namespace rpm {
 			/**
 			 * @brief Address of either an in-module location or a global absolute symbol.
 			 */
-			InternalAddress Internal;
+			u32 			RawAddress;
 			/**
 			 * @brief Hash referencing an external imported symbol's internal address.
 			 */

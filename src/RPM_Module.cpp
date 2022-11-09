@@ -18,6 +18,7 @@ namespace rpm {
 		Module* module = reinterpret_cast<Module*>(alloc);
 		module->Expand();
 		module->RelocateControl();
+		module->Prepare();
 		return module;
 	}
 
@@ -54,55 +55,104 @@ namespace rpm {
 		return nullptr;
 	}
 
-	void Module::LinkWithModule(Module* other) {
-		RPM_ASSERT(other);
-		this->ImportModule(other);
-		other->ImportModule(this);
+	void Module::AllowLinking() {
+		SetReserveFlag(RPM_RSVFLAG_MODULE_LINK_READY);
 	}
 
-	void Module::ImportModule(Module* other) {
+	bool Module::LinkWithModule(Module* other) {
+		RPM_ASSERT(other);
+		this->ImportModule(other);
+		return other->ImportModule(this) != 0;
+	}
+
+	void Module::UnlinkFromModule(Module* other) {
+		this->UnimportModule(other);
+		other->UnimportModule(this);
+	}
+
+	u32 Module::ImportModule(Module* other) {
+		if (GetReserveFlag(RPM_RSVFLAG_ALL_IMPORTED) || !GetReserveFlag(RPM_RSVFLAG_MODULE_LINK_READY)) {
+			return 0;
+		}
 		RPM_DEBUG_PRINTF("Begin module import.\n");
 		SymbolSection* symSect = GetSymbols();
 		SymbolSection* otherSymSect = other->GetSymbols();
+		u32 totalImportedCount = 0;
 		if (symSect && otherSymSect && otherSymSect->ExportSymbolHashTable) {
 			u32 firstImportSymbolIdx = symSect->FirstImportSymbolIdx;
 			u32 importSymbolCount = symSect->ImportSymbolCount;
 			u32 otherExportSymbolCount = otherSymSect->ExportSymbolCount;
 			u8* otherCode = other->GetCode();
+			RPM_NAMEHASH* exportHashArr = otherSymSect->ExportSymbolHashTable;
 
 			RPM_DEBUG_PRINTF("Linking module, import symbol ct %d other export symbol ct %d first import symbol index %d\n", importSymbolCount, otherExportSymbolCount, firstImportSymbolIdx);
 			
 			if (importSymbolCount && otherExportSymbolCount && firstImportSymbolIdx != 0xFFFF) {
 				Symbol* sym = &symSect->Symbols[firstImportSymbolIdx];
 				Symbol* extSym;
+				bool existAnyImportSymbol = false;
 				u32 importSymbolEnd = firstImportSymbolIdx + importSymbolCount;
 				for (u32 importSymbolIndex = firstImportSymbolIdx; importSymbolIndex < importSymbolEnd; importSymbolIndex++, sym++) {
 					if (sym->Attr & SymbolAttr::RPM_SYMATTR_IMPORT) {
 						RPM_NAMEHASH hash = sym->Addr.ImportHash;
-
-						RPM_NAMEHASH* exportHashArr = otherSymSect->ExportSymbolHashTable;
-						for (u32 j = 0; j < otherExportSymbolCount; j++, exportHashArr++) {
-							if (hash == *exportHashArr) {
-								//Hashes matched
-								extSym = &otherSymSect->Symbols[otherSymSect->FirstExportSymbolIdx + j];
-								if (!(extSym->Attr & SymbolAttr::RPM_SYMATTR_IMPORT)) {
-									RPM_DEBUG_PRINTF("Linking symbol %s (hash %x).\n", GetString(sym->Name), hash);
-									sym->Addr.Internal.Local = 0; //always global offset
-									if (extSym->Addr.Internal.Local) {
-										sym->Addr.Internal.Value = reinterpret_cast<u32>(otherCode + extSym->Addr.Internal.Value);
-									}
-									else {
-										sym->Addr.Internal.Value = extSym->Addr.Internal.Value;
-									}
-									sym->Type = extSym->Type;
-
-									sym->Attr &= ~SymbolAttr::RPM_SYMATTR_IMPORT;
-									RelocateByImportSymbol(importSymbolIndex);
-									break;
+						u32 index = Util::BinarySearchExportTable(hash, exportHashArr, otherExportSymbolCount);
+						if (index != -1) {
+							//Hashes matched
+							extSym = &otherSymSect->Symbols[otherSymSect->FirstExportSymbolIdx + index];
+							if (!(extSym->Attr & SymbolAttr::RPM_SYMATTR_IMPORT)) {
+								RPM_DEBUG_PRINTF("Linking symbol %s (hash %x).\n", GetString(sym->Name), hash);
+								sym->Attr |= RPM_SYMATTR_GLOBAL; //always global offset
+								if (!(extSym->Attr & RPM_SYMATTR_GLOBAL)) {
+									sym->Addr.RawAddress = reinterpret_cast<u32>(otherCode + extSym->Addr.RawAddress);
 								}
+								else {
+									sym->Addr.RawAddress = extSym->Addr.RawAddress;
+								}
+								sym->Type = extSym->Type;
+
+								sym->Attr &= ~SymbolAttr::RPM_SYMATTR_IMPORT;
+								RelocateByImportSymbol(importSymbolIndex);
+								totalImportedCount++;
 							}
 						}
+						else {
+							existAnyImportSymbol = true; //there are still symbols yet to be imported
+						}
 					}
+				}
+				if (!existAnyImportSymbol) {
+					SetReserveFlag(RPM_RSVFLAG_ALL_IMPORTED);
+				}
+			}
+		}
+		RPM_DEBUG_PRINTF("Imported %d symbols.\n", totalImportedCount);
+		return totalImportedCount;
+	}
+
+	void Module::UnimportModule(Module* other) {
+		SymbolSection* symSect = GetSymbols();
+		SymbolSection* otherSymSect = other->GetSymbols();
+
+		if (symSect && otherSymSect && otherSymSect->ExportSymbolHashTable) {
+			u32 firstImportSymbolIdx = symSect->FirstImportSymbolIdx;
+			u32 otherExportSymbolCount = otherSymSect->ExportSymbolCount;
+			
+			if (symSect->ImportSymbolCount && otherExportSymbolCount && firstImportSymbolIdx != 0xFFFF) {
+				rpm::Symbol* symArray = &symSect->Symbols[firstImportSymbolIdx];
+				RPM_NAMEHASH* exportHashArr = otherSymSect->ExportSymbolHashTable;
+				u32 importSymCount = symSect->ImportSymbolCount;
+				bool anyUnimported = false;
+				for (u32 i = 0; i < otherExportSymbolCount; i++) {
+					RPM_NAMEHASH exportedHash = exportHashArr[i];
+					rpm::Symbol* imSym = Util::BinarySearchImportTable(exportedHash, symArray, importSymCount);
+					if (imSym != nullptr) {
+						RPM_DEBUG_PRINTF("Unlinked symbol 0x%x.\n", imSym->Addr.ImportHash);
+						imSym->Attr |= SymbolAttr::RPM_SYMATTR_IMPORT; //flag as needs-import
+						anyUnimported = true;
+					}
+				}
+				if (anyUnimported) {
+					ClearReserveFlag(RPM_RSVFLAG_ALL_IMPORTED);
 				}
 			}
 		}
@@ -135,12 +185,9 @@ namespace rpm {
 			if (symbols->ExportSymbolHashTable) {
 				RPM_NAMEHASH hash = Util::HashName(name);
 				RPM_DEBUG_PRINTF("Looking for export symbol %s by hash %x.\n", name, hash);
-				u32 count = symbols->ExportSymbolCount;
-				RPM_NAMEHASH* hashes = symbols->ExportSymbolHashTable;
-				for (u32 i = 0; i < count; i++, hashes++) {
-					if (hash == *hashes) {
-						return i + symbols->FirstExportSymbolIdx;
-					}
+				u32 index = Util::BinarySearchExportTable(hash, symbols->ExportSymbolHashTable, symbols->ExportSymbolCount);
+				if (index != -1) {
+					return index + symbols->FirstExportSymbolIdx;
 				}
 			}
 		}
@@ -271,6 +318,13 @@ namespace rpm {
 		}
 	}
 
+	void Module::Prepare() {
+		rpm::Module::SymbolSection* symSect = GetSymbols();
+		if (symSect == nullptr || symSect->ImportSymbolCount == 0) {
+			SetReserveFlag(RPM_RSVFLAG_ALL_IMPORTED);
+		}
+	}
+
 	void Module::RelocateInternal() {
 		if (!GetReserveFlag(RPM_RSVFLAG_CODE_RELOCATED_INTERNAL)) {
 			RelocationSection* rel = GetRelocations();
@@ -309,6 +363,7 @@ namespace rpm {
 						Util::CutAlign16(&addr);
 
 						u8* code = GetCode() + addr;
+						RPM_DEBUG_PRINTF("Relocating by import symbol @ %p (rel. %p) -> %p\n", code, addr);
 
 						Util::DoRelocation(code, this, r);
 					}

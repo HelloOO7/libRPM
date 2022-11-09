@@ -71,10 +71,7 @@ int main(void) {
 	exl::heap::HeapArea* memMgr = new(malloc(sizeof(exl::heap::HeapArea))) exl::heap::HeapArea("RPMTests", memMgrHeap, MEMORY_MGR_HEAPSIZE);
 	rpm::mgr::ModuleManager* modMgr = new(memMgr) rpm::mgr::ModuleManager(memMgr);
 
-	void* testDependency = ReadFile("D:/_REWorkspace/pokescript_genv/codeinjection_new/NitroKernel/build/NitroKernel.dll", memMgr);
-	rpm::Module* depMod = modMgr->LoadModule(testDependency);
-
-	void* testModule = ReadFile("D:/_REWorkspace/pokescript_genv/codeinjection_new/CinePlayerTest/CinePlayerTest.dll", memMgr);
+	void* testModule = ReadFile("D:/_REWorkspace/CTRMapProjects/PMC/vfs/data/lib/ExtLib.Media.Cinepak.dll", memMgr);
 
 	rpm::Module* mod = modMgr->LoadModule(testModule);
 
@@ -86,6 +83,10 @@ int main(void) {
 
 		Dump(testModule, mod);
 	}
+
+	void* testDependency = ReadFile("D:/_REWorkspace/CTRMapProjects/PMC/vfs/data/patches/NitroKernel.dll", memMgr);
+	rpm::Module* depMod = modMgr->LoadModule(testDependency);
+
 	printf("Starting module 1\n");
 	modMgr->StartModule(depMod, rpm::FixLevel::NONE);
 
