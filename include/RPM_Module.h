@@ -332,6 +332,16 @@ namespace rpm {
 		RPM_PUBLIC u8* GetSymbolAddressAbsolute(Symbol* sym);
 
 		/**
+		 * @brief Gets the address of a procedure within the module.
+		 * 
+		 * @param name Name of the procedure.
+		 * @return Pointer to the procedure in memory.
+		 */
+		RPM_PUBLIC void* GetProcAddress(const char* name) {
+			return GetSymbolAddressAbsolute(FindExportSymbol(name));
+		}
+
+		/**
 		 * @brief Gets the number of unique named modules that this module has external symbols within.
 		 * 
 		 * @return u16 Number of external symbol modules. 
