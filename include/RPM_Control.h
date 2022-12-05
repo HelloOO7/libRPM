@@ -233,6 +233,13 @@ namespace rpm {
 		u32			Count;
 		Relocation 	Relocations[];
 	};
+
+	typedef void (*VoidFn)(void);
+
+	struct FuncArrayList {
+		u16 	Count;
+		u16		SymbolIndices[];
+	};
 }
 
 #endif

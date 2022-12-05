@@ -29,4 +29,7 @@
 #define ARM_BL(jump) (0b11101011 << 24)| (((jump) >> 2) & 0xFFFFFF)
 #define ARM_B(jump) (0b11101010 << 24)| (((jump) >> 2) & 0xFFFFFF)
 
+#define ARM_CLEAR_COND(insn) ((insn) & 0x0FFFFFFF)
+#define ARM_MASK_COND(insn) ((insn) & 0xF0000000)
+
 #endif

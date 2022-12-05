@@ -304,6 +304,8 @@ namespace rpm {
 			RelocHeaderPtrNonNull(&m_Exec->Info->Strings);
 			RelocHeaderPtrNonNull(&m_Exec->Info->Relocations);
 			RelocHeaderPtrNonNull(&m_Exec->Info->MetaValueSection);
+			RelocHeaderPtrNonNull(&m_Exec->Info->StaticInitializers);
+			RelocHeaderPtrNonNull(&m_Exec->Info->StaticDestructors);
 			if (m_Exec->Info->Symbols) {
 				RelocHeaderPtrNonNull(&m_Exec->Info->Symbols->ExternModules);
 				RelocHeaderPtrNonNull(&m_Exec->Info->Symbols->ExportSymbolHashTable);

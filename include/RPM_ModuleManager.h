@@ -123,6 +123,14 @@ namespace rpm {
 			RPM_PUBLIC virtual void StartModule(rpm::Module* module, rpm::FixLevel fixLevel);
 
 			/**
+			 * @brief Gets the address of a procedure within a module. Used for VTable convenience.
+			 * 
+			 * @param name Name of the procedure.
+			 * @return Pointer to the procedure in memory.
+			 */
+			RPM_PUBLIC virtual void* GetProcAddress(rpm::Module* module, const char* name);
+
+			/**
 			 * @brief Calls the DllMain function of a module, if it is present.
 			 * 
 			 * @param module The module to control.

@@ -23,13 +23,9 @@ message( FATAL_ERROR "Invalid target platform!")
 
 ENDIF ()
 
-project(LibRPM VERSION 0.9.0)
+project(LibRPM VERSION 0.13.0)
 
 add_compile_options(-fno-rtti -fno-exceptions -fvisibility=hidden)
-
-include(CTest)
-enable_testing()
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../extlib)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 add_compile_definitions(DEBUG)

@@ -75,6 +75,16 @@ namespace rpm {
 			}
 
 			/**
+			 * @brief Reads a 32-bit value from an aligned memory location.
+			 * 
+			 * @param src The address to read from.
+			 * @return The value at src interpreted as a 32-bit integer.
+			 */
+			INLINE static u32 Read32(u8* src) {
+				return *reinterpret_cast<u32*>(src); //WARNING: Src must be DWORD-aligned
+			}
+
+			/**
 			 * @brief Writes a 32-bit value to an aligned memory location.
 			 * 
 			 * @param dest The address to write to.

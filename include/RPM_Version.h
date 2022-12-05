@@ -13,7 +13,7 @@
 /**
  * @brief Current version of the Relocatable Program Module library and supported binary formats.
  */
-#define LIBRPM_VERSION 12 //libRPM v0.12
+#define LIBRPM_VERSION 13 //libRPM v0.12
 
 /**
  *  === RELOCATABLE PROGRAM MODULE LIBRARY - VERSION HISTORY ===
@@ -35,6 +35,7 @@
  *  - v0.10 : Remove external relocation sources (never used), shrink rpm::Relocation size to 12 bytes.
  *  - v0.11 : Add BSS support / module expansion, header fields now relative to start of DLXH.
  *  - v0.12 : Export/import symbols are now sorted, allowing for binary search. Global address attribute moved to SymbolAttr.
+ *  - v0.13 : Static initializer/finalizer support.
  */
 
 #endif

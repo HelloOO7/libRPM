@@ -84,8 +84,9 @@ namespace rpm {
 			StringSection*		Strings;
 			u8*					Code;
 			u32					CodeSize;
+			FuncArrayList*		StaticInitializers;
+			FuncArrayList*		StaticDestructors;
 			MetaDataSection*	MetaValueSection;
-			u32					Reserved1;
 		};
 
 		struct DllExec {
@@ -422,7 +423,8 @@ namespace rpm {
 			RPM_RSVFLAG_CONTROL_RELOCATED = 0x1,
 			RPM_RSVFLAG_CODE_RELOCATED_INTERNAL = 0x2,
 			RPM_RSVFLAG_MODULE_LINK_READY = 0x4,
-			RPM_RSVFLAG_ALL_IMPORTED = 0x8
+			RPM_RSVFLAG_ALL_IMPORTED = 0x8,
+			RPM_RSVFLAG_MODULE_STARTED = 0x10
 		};
 
 		bool GetReserveFlag(ReserveFlag flag) {

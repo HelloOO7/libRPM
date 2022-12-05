@@ -53,6 +53,22 @@ namespace rpm {
 			}
 		}
 
+		void CallFuncArray(rpm::Module* mod, rpm::FuncArrayList* funcArray) {
+			if (funcArray) {
+				for (u32 i = 0; i < funcArray->Count; i++) {
+					rpm::Symbol* sym = mod->GetSymbol(funcArray->SymbolIndices[i]);
+					if (sym) {
+						VoidFn* funcptr = reinterpret_cast<VoidFn*>(mod->GetSymbolAddressAbsolute(sym));
+						u32 fnCount = (sym->Size) >> 2;
+						for (u32 fnIndex = 0; fnIndex < fnCount; fnIndex++) {
+							(*funcptr)();
+							funcptr++;
+						}
+					}
+				}
+			}
+		}
+
 		rpm::Module* ModuleManager::LoadModule(rpm::init::ModuleAllocation data) {
 			RPM_ASSERT(data);
 			//Reallocate for BSS expansion. If the parent framework is smart, the allocation is already big enough and nothing is changed.
@@ -80,7 +96,10 @@ namespace rpm {
 
 		void ModuleManager::UnloadModule(rpm::Module* module) {
 			RPM_ASSERT(module);
-			ControlModule(module, rpm::DllMainReason::MODULE_UNLOAD);
+			bool started = module->GetReserveFlag(rpm::Module::ReserveFlag::RPM_RSVFLAG_MODULE_STARTED);
+			if (started) {
+				ControlModule(module, rpm::DllMainReason::MODULE_UNLOAD);
+			}
 			if (module->GetPrevModule()) {
 				module->GetPrevModule()->SetNextModule(module->GetNextModule());
 			}
@@ -91,6 +110,10 @@ namespace rpm {
 				//Last module shall only have a PrevModule, not NextModule
 				//If module->PrevModule is NULL, this is the last module being unloaded
 				m_LastModule = module->GetPrevModule();
+			}
+			if (started) {
+				CallFuncArray(module, module->m_Exec->Info->StaticDestructors);
+				module->ClearReserveFlag(rpm::Module::ReserveFlag::RPM_RSVFLAG_MODULE_STARTED);
 			}
 			UnlinkModule(module);
 			CallModuleListeners(module, UNLOADED);
@@ -104,6 +127,7 @@ namespace rpm {
 			LinkModule(module);
 			RPM_DEBUG_PRINTF("Processing internal relocations...\n");
 			module->RelocateInternal();
+			CallFuncArray(module, module->m_Exec->Info->StaticInitializers);
 			RPM_DEBUG_PRINTF("Fixing %d.\n", fixLevel);
 			FixModule(module, fixLevel);
 			CallModuleListeners(module, READY);
@@ -111,7 +135,15 @@ namespace rpm {
 			//TODO static initializers
 			ControlModule(module, rpm::DllMainReason::MODULE_LOAD); //todo: failure ?
 			CallModuleListeners(module, STARTED);
+			module->SetReserveFlag(rpm::Module::ReserveFlag::RPM_RSVFLAG_MODULE_STARTED);
 			RPM_DEBUG_PRINTF("Module started\n");
+		}
+
+		void* ModuleManager::GetProcAddress(rpm::Module* module, const char* name) {
+			if (module) {
+				return module->GetProcAddress(name);
+			}
+			return nullptr;
 		}
 
 		void ModuleManager::FixModule(rpm::Module* module, rpm::FixLevel fixLevel) {
