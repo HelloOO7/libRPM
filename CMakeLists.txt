@@ -46,6 +46,7 @@ set_target_properties(LibRPM PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(LibRPM PUBLIC include)
 
 add_library(LibRPM.Include OBJECT include/RPM_Api.h)
+set_target_properties(LibRPM.Include PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(LibRPM.Include PUBLIC include)
 
 IF (WIN32)
