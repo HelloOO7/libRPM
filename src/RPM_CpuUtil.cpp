@@ -19,8 +19,6 @@ namespace rpm {
 			u8* prefetchPtr = req->Source + 4;
 			ptrdiff_t diff = req->Target - prefetchPtr;
 			
-			high = THUMB_BL_HI(diff);
-
 			if (!IsAddrThumb(req->Target)) {
 				if (diff < 0) {
 					diff = (diff + 3) & 0xFFFFFFFC;
@@ -30,6 +28,8 @@ namespace rpm {
 			else {
 				low = THUMB_BL_LO(diff);
 			}
+
+			high = THUMB_BL_HI(diff);
 
 			StreamWrite16(&req->Source, high);
 			StreamWrite16(&req->Source, low);
