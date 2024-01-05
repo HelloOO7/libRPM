@@ -10,21 +10,13 @@
 #ifndef __RPM_TYPES_H
 #define __RPM_TYPES_H
 
-#ifdef __cplusplus
-
-#include <cstdbool>
-#include <cstddef>
-#include <cstdio>
-#include <cstdint>
-
-#else
-
+#ifndef __cplusplus
 #include <stdbool.h>
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
-
-#endif
 
 /**
  * @brief Counts the number of elements in an array.
